@@ -68,6 +68,8 @@ def read_atom(r: Reader) -> mw.Expr:
     t = r.next()
     if t is None:
         raise SyntaxError("What?")
-    if t.isnumeric():
+    try:
         return int(t)
+    except ValueError:
+        pass
     return mw.Symbol(t)
