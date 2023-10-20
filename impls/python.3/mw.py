@@ -1,8 +1,15 @@
-from typing import List, Optional, TypeAlias
+from typing import Callable, List, Optional, TypeAlias
 
 Symbol: TypeAlias = str
 
-Expr: TypeAlias = int | Symbol | List["Expr"]
+
+class Nil:
+    pass
+
+
+nil = Nil()
+
+Expr: TypeAlias = Nil | bool | int | Symbol | List["Expr"] | Callable
 
 
 ###############
@@ -15,9 +22,20 @@ class EnvError(Exception):
 
 
 class Env:
-    def __init__(self, outer: Optional["Env"] = None):
+    def __init__(
+        self,
+        outer: Optional["Env"] = None,
+        binds: List | None = None,
+        exprs: List[Expr] | None = None,
+    ):
         self._outer = outer
         self._data = {}
+        if binds:
+            for i, (k, v) in enumerate(zip(binds, exprs)):
+                if k == "&":
+                    self._data[binds[i + 1]] = exprs[i:]
+                    break
+                self._data[k] = v
 
     def set(self, key: Symbol, value: Expr) -> Expr:
         self._data[key] = value

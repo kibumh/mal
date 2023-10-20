@@ -68,6 +68,10 @@ def read_atom(r: Reader) -> mw.Expr:
     t = r.next()
     if t is None:
         raise SyntaxError("What?")
+    if t == "nil":
+        return mw.nil
+    if t in ("true", "false"):
+        return t == "true"
     try:
         return int(t)
     except ValueError:
