@@ -1,4 +1,5 @@
-from typing import Callable, List, Optional, TypeAlias
+import dataclasses
+from typing import Any, Callable, List, Optional, TypeAlias
 
 Symbol: TypeAlias = str
 
@@ -9,7 +10,16 @@ class Nil:
 
 nil = Nil()
 
-Expr: TypeAlias = Nil | bool | int | Symbol | List["Expr"] | Callable
+
+@dataclasses.dataclass
+class Fn:
+    body: Any  # TODO: Expr
+    params: List[Symbol]
+    env: Any  # TODO: Env
+    fn: Callable
+
+
+Expr: TypeAlias = Nil | bool | int | Symbol | List["Expr"] | Callable | Fn
 
 
 ###############

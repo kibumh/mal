@@ -17,4 +17,6 @@ def pr_str(e: mw.Expr) -> str:
         return "(" + " ".join(pr_str(pr_str(c)) for c in e) + ")"
     if isinstance(e, Callable):
         return "#<function>"
+    if isinstance(e, mw.Fn):
+        return "#<tcofunction>"
     raise ValueError("Unexpected expression, " + e)
