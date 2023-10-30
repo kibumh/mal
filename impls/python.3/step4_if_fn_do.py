@@ -9,6 +9,10 @@ _PROMPT = "user> "
 def eval_ast(e: mw.Expr, env) -> mw.Expr:
     if isinstance(e, mw.Symbol):
         return env.get(e)
+    if isinstance(e, mw.Vector):
+        return mw.Vector([EVAL(child, env) for child in e.vector])
+    if isinstance(e, mw.Map):
+        return mw.Map([(k, EVAL(v, env)) for k, v in e.m])
     if isinstance(e, list):
         return [EVAL(child, env) for child in e]
     return e
@@ -24,23 +28,26 @@ def EVAL(e: mw.Expr, env) -> mw.Expr:
     if len(e) == 0:
         return e
     match e[0]:
-        case "def!":
+        case mw.Symbol("def!"):
             return env.set(e[1], EVAL(e[2], env))
-        case "let*":
+        case mw.Symbol("let*"):
             new_env = mw.Env(env)
-            for k, v in zip(e[1][::2], e[1][1::2]):
+            binds = e[1]
+            if isinstance(binds, mw.Vector):
+                binds = binds.vector
+            for k, v in zip(binds[::2], binds[1::2]):
                 new_env.set(k, EVAL(v, new_env))  # env or new_env?
             return EVAL(e[2], new_env)
-        case "do":
+        case mw.Symbol("do"):
             return [EVAL(c, env) for c in e[1:]][-1]  # FIXME: step4: Why eval_ast?
-        case "if":
+        case mw.Symbol("if"):
             cond = EVAL(e[1], env)
             cond = not (cond is mw.nil or cond is False)
             then_clause = e[2]
             else_clause = e[3] if len(e) == 4 else mw.nil
             return EVAL(then_clause if cond else else_clause, env)
-        case "fn*":
-            return lambda *args: EVAL(e[2], mw.Env(env, e[1], args))
+        case mw.Symbol("fn*"):
+            return lambda *args: EVAL(e[2], mw.Env(env, e[1], list(args)))
         case default:
             e = eval_ast(e, env)
             return e[0](*e[1:])
@@ -58,6 +65,7 @@ def main() -> None:
     repl_env = mw.Env()
     for k, v in core.ns.items():
         repl_env.set(k, v)
+    rep("(def! not (fn* (a) (if a false true)))", repl_env)
     while True:
         print(_PROMPT, end="")
         try:

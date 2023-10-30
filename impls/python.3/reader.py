@@ -10,6 +10,10 @@ _PATTERN = re.compile(
 )
 
 
+def tokenize(s: str) -> [Token]:
+    return _PATTERN.findall(s)
+
+
 class SyntaxError(Exception):
     pass
 
@@ -38,10 +42,6 @@ def read_str(s: str) -> mw.Expr:
     return read_form(reader)
 
 
-def tokenize(s: str) -> [Token]:
-    return _PATTERN.findall(s)
-
-
 def read_form(r: Reader) -> mw.Expr | None:
     match r.peek():
         case "":
@@ -49,19 +49,94 @@ def read_form(r: Reader) -> mw.Expr | None:
         case "(":
             _ = r.next()
             return read_list(r)
+        case "[":
+            _ = r.next()
+            return read_vector(r)
+        case "{":
+            _ = r.next()
+            return read_map(r)
+        case "'" | "`" | "~" | "~@" | "@":
+            return read_macro(r)
         case default:
             return read_atom(r)
 
 
-def read_list(r: Reader) -> mw.Expr:
+_MACROS = {
+    "'": mw.Symbol("quote"),
+    "`": mw.Symbol("quasiquote"),
+    "~": mw.Symbol("unquote"),
+    "~@": mw.Symbol("splice-unquote"),
+    "@": mw.Symbol("deref"),
+}
+
+
+def read_macro(r: Reader) -> mw.Expr:
+    m = r.next()
+    if m not in _MACROS:
+        raise Syntax("Unexpected reader macro")
+    return [_MACROS[m], read_form(r)]
+
+
+def read_map(r: Reader) -> mw.Map:
+    m = []
+    while True:
+        k = read_form(r)
+        if k is None:
+            raise SyntaxError("unbalanced braces")
+        if k == mw.Symbol("}"):
+            return mw.Map(m)
+        v = read_form(r)
+        if v is None:
+            raise SyntaxError("unbalanced braces")
+        m.append((k, v))
+
+
+def read_vector(r: Reader) -> mw.Vector:
+    v = []
+    while True:
+        expr = read_form(r)
+        if expr is None:
+            raise SyntaxError("unbalanced brackets")
+        if expr == mw.Symbol("]"):
+            return mw.Vector(v)
+        v.append(expr)
+
+
+def read_list(r: Reader) -> mw.Expr:  # List[Expr]?
     l = []
     while True:
         expr = read_form(r)
         if expr is None:
             raise SyntaxError("unbalanced parenthesis")
-        if expr == ")":
+        if expr == mw.Symbol(")"):
             return l
         l.append(expr)
+
+
+_ESCAPES = {'"': '"', "n": "\n", "\\": "\\"}
+
+
+def _read_string(t: Token) -> mw.Expr:
+    if t[-1] != '"' or len(t) == 1:
+        raise SyntaxError("unbalanced string")
+
+    parsed = ""
+    escaped = False
+    for c in t[1:-1]:
+        if escaped:
+            if c not in _ESCAPES:
+                raise "unsupported escape"
+            parsed += _ESCAPES[c]
+            escaped = False
+            continue
+        if c == "\\":
+            escaped = True
+            continue
+        parsed += c
+    if escaped:
+        raise SyntaxError("unbalanced string")
+
+    return parsed
 
 
 def read_atom(r: Reader) -> mw.Expr:
@@ -76,4 +151,10 @@ def read_atom(r: Reader) -> mw.Expr:
         return int(t)
     except ValueError:
         pass
-    return mw.Symbol(t)
+    if isinstance(t, str):
+        if t[0] == '"':
+            return _read_string(t)
+        if t[0] == ":":
+            return mw.Keyword(t[1:])
+        return mw.Symbol(t)
+    raise SyntaxError(f"Unexpected token, {t}")

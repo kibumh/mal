@@ -15,6 +15,10 @@ def eval_ast(e: mw.Expr, env) -> mw.Expr:
             return env[e]
         except KeyError as exc:
             raise EnvError(f"{e} not found") from exc
+    if isinstance(e, mw.Vector):
+        return mw.Vector([EVAL(child, env) for child in e.vector])
+    if isinstance(e, mw.Map):
+        return mw.Map([(k, EVAL(v, env)) for k, v in e.m])
     if isinstance(e, list):
         return [EVAL(child, env) for child in e]
     return e
@@ -43,10 +47,10 @@ def rep(arg: str, env) -> None:
 
 def main() -> None:
     env = {
-        "+": lambda a, b: a + b,
-        "-": lambda a, b: a - b,
-        "*": lambda a, b: a * b,
-        "/": lambda a, b: a // b,
+        mw.Symbol("+"): lambda a, b: a + b,
+        mw.Symbol("-"): lambda a, b: a - b,
+        mw.Symbol("*"): lambda a, b: a * b,
+        mw.Symbol("/"): lambda a, b: a // b,
     }
     while True:
         print(_PROMPT, end="")
