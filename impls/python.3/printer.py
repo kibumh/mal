@@ -29,18 +29,22 @@ def pr_str(e: mw.Expr, readably: Optional[bool] = True) -> str:
         return ":" + e.keyword
     if isinstance(e, str):
         return _print_string(e, readably)
-    if isinstance(e, mw.Vector):
-        return "[" + " ".join(pr_str(c, readably) for c in e.vector) + "]"
     if isinstance(e, list):
         return "(" + " ".join(pr_str(c, readably) for c in e) + ")"
+    if isinstance(e, mw.Vector):
+        return "[" + " ".join(pr_str(c, readably) for c in e.vector) + "]"
     if isinstance(e, mw.Map):
         return (
             "{"
             + " ".join(pr_str(k, readably) + " " + pr_str(v, readably) for k, v, in e.m)
             + "}"
         )
+    if isinstance(e, mw.Atom):
+        return "(atom " + pr_str(e.v, readably) + ")"
     if isinstance(e, Callable):
         return "#<function>"
     if isinstance(e, mw.Fn):
         return "#<tcofunction>"
+    if isinstance(e, mw.Comment):
+        return ""
     raise ValueError("Unexpected expression, " + e)

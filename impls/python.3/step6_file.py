@@ -1,3 +1,5 @@
+import sys
+
 import core
 import mw
 import printer
@@ -55,7 +57,7 @@ def EVAL(e: mw.Expr, env) -> mw.Expr:
                     params=e[1],
                     env=env,
                     fn=None,  # TODO: lambda *args: EVAL(e[2], mw.Env(env, e[1], args))
-                    eval_fn=None,
+                    eval_fn=EVAL,
                 )
             case default:
                 e = eval_ast(e, env)
@@ -79,7 +81,19 @@ def main() -> None:
     repl_env = mw.Env()
     for k, v in core.ns.items():
         repl_env.set(k, v)
+    repl_env.set(mw.Symbol("eval"), lambda e: EVAL(e, repl_env))
+    repl_env.set(mw.Symbol("*ARGV*"), sys.argv[2:])
+
     rep("(def! not (fn* (a) (if a false true)))", repl_env)
+    rep(
+        '(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))',
+        repl_env,
+    )
+
+    if len(sys.argv) > 1:
+        rep('(load-file "' + sys.argv[1] + '")', repl_env)
+        sys.exit(0)
+
     while True:
         print(_PROMPT, end="")
         try:

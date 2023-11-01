@@ -3,6 +3,10 @@ import itertools
 from typing import Any, Callable, List, Optional, TypeAlias
 
 
+class Comment:
+    pass
+
+
 class Nil:
     pass
 
@@ -26,6 +30,7 @@ class Fn:
     params: List[Symbol]
     env: Any  # TODO: Env
     fn: Callable
+    eval_fn: Callable  # Hack to pass eval function to core module
 
 
 @dataclasses.dataclass
@@ -46,8 +51,25 @@ class Map:
     m: Any  # List[Expr, Expr]
 
 
+@dataclasses.dataclass
+class Atom:
+    v: Any  # Expr
+
+
 Expr: TypeAlias = (
-    Nil | bool | int | Symbol | Keyword | Vector | List["Expr"] | Callable | Fn
+    Comment
+    | Nil
+    | bool
+    | int
+    | Symbol
+    | Keyword
+    | str
+    | List["Expr"]
+    | Vector
+    | Map
+    | Atom
+    | Callable
+    | Fn
 )
 
 

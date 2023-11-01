@@ -42,7 +42,7 @@ def read_str(s: str) -> mw.Expr:
     return read_form(reader)
 
 
-def read_form(r: Reader) -> mw.Expr | None:
+def read_form(r: Reader, skip_comment=False) -> mw.Expr | None:
     match r.peek():
         case "":
             return None
@@ -57,6 +57,12 @@ def read_form(r: Reader) -> mw.Expr | None:
             return read_map(r)
         case "'" | "`" | "~" | "~@" | "@":
             return read_macro(r)
+        case s if s.startswith(";"):
+            if skip_comment:
+                _ = r.next()
+                return read_form(r, skip_comment)
+            else:
+                return mw.Comment()
         case default:
             return read_atom(r)
 
@@ -74,18 +80,18 @@ def read_macro(r: Reader) -> mw.Expr:
     m = r.next()
     if m not in _MACROS:
         raise Syntax("Unexpected reader macro")
-    return [_MACROS[m], read_form(r)]
+    return [_MACROS[m], read_form(r, True)]
 
 
 def read_map(r: Reader) -> mw.Map:
     m = []
     while True:
-        k = read_form(r)
+        k = read_form(r, True)
         if k is None:
             raise SyntaxError("unbalanced braces")
         if k == mw.Symbol("}"):
             return mw.Map(m)
-        v = read_form(r)
+        v = read_form(r, True)
         if v is None:
             raise SyntaxError("unbalanced braces")
         m.append((k, v))
@@ -94,7 +100,7 @@ def read_map(r: Reader) -> mw.Map:
 def read_vector(r: Reader) -> mw.Vector:
     v = []
     while True:
-        expr = read_form(r)
+        expr = read_form(r, True)
         if expr is None:
             raise SyntaxError("unbalanced brackets")
         if expr == mw.Symbol("]"):
@@ -105,7 +111,7 @@ def read_vector(r: Reader) -> mw.Vector:
 def read_list(r: Reader) -> mw.Expr:  # List[Expr]?
     l = []
     while True:
-        expr = read_form(r)
+        expr = read_form(r, True)
         if expr is None:
             raise SyntaxError("unbalanced parenthesis")
         if expr == mw.Symbol(")"):

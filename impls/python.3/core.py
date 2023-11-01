@@ -1,19 +1,21 @@
 import operator
+from typing import Callable
 
 import mw
 import printer
+import reader
 
 
-def _atomp(x: mw.Expr):
+def _singularp(x: mw.Expr):
     return not isinstance(x, (list, mw.Vector, mw.Map))
 
 
 def _eq(x: mw.Expr, y: mw.Expr) -> bool:
-    if _atomp(x):
-        if _atomp(y):
+    if _singularp(x):
+        if _singularp(y):
             return x == y
         return False
-    if _atomp(y):
+    if _singularp(y):
         return False
     if len(x) != len(y):
         return False
@@ -44,6 +46,34 @@ def _count(e: mw.Expr) -> int:
     return len(e) if isinstance(e, list) or isinstance(e, mw.Vector) else 0
 
 
+def _slurp(e: mw.Expr) -> str:
+    if not isinstance(e, str):
+        raise RuntimeError("path is not string, %s", e)
+    with open(e, "r") as fp:
+        return fp.read()
+
+
+def _reset(e1: mw.Expr, e2: mw.Expr) -> mw.Expr:
+    if not isinstance(e1, mw.Atom):
+        raise RuntimeError("first element is not atom")
+    e1.v = e2
+    return e2
+
+
+def _swap(e: mw.Expr, f: mw.Expr, *es) -> mw.Expr:
+    if not isinstance(e, mw.Atom):
+        raise RuntimeError("first element is not atom")
+    # TODO(kibum): Use apply?
+    if isinstance(f, Callable):
+        e.v = f(e.v, *es)
+    elif isinstance(f, mw.Fn):
+        print(f, es)
+        e.v = f.eval_fn(f.body, mw.Env(f.env, f.params, [e.v] + list(es)))
+    else:
+        raise RuntimeError("second element is not function")
+    return e.v
+
+
 ns = {
     mw.Symbol("="): _eq,
     mw.Symbol("pr-str"): _pr_str,
@@ -62,4 +92,12 @@ ns = {
     mw.Symbol("list?"): lambda e: isinstance(e, list),
     mw.Symbol("empty?"): lambda e: len(e) == 0,
     mw.Symbol("count"): _count,
+    mw.Symbol("read-string"): reader.read_str,
+    mw.Symbol("slurp"): _slurp,
+    mw.Symbol("atom"): lambda e: mw.Atom(e),
+    mw.Symbol("atom?"): lambda e: isinstance(e, mw.Atom),
+    # TODO(kibumh): atom이 아니면 어떡하지?
+    mw.Symbol("deref"): lambda e: e.v if isinstance(e, mw.Atom) else mw.Nil,
+    mw.Symbol("reset!"): _reset,
+    mw.Symbol("swap!"): _swap,
 }
