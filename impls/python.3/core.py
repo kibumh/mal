@@ -1,3 +1,4 @@
+import functools
 import operator
 from typing import Callable
 
@@ -100,4 +101,10 @@ ns = {
     mw.Symbol("deref"): lambda e: e.v if isinstance(e, mw.Atom) else mw.Nil,
     mw.Symbol("reset!"): _reset,
     mw.Symbol("swap!"): _swap,
+    mw.Symbol("cons"): lambda e, l: [e] + (l.vector if isinstance(l, mw.Vector) else l),
+    # TODO(kibumh): 모두 list인지 체크할 것
+    mw.Symbol("concat"): lambda *es: functools.reduce(
+        operator.add, [e.vector if isinstance(e, mw.Vector) else e for e in es], []
+    ),
+    mw.Symbol("vec"): lambda e: e if isinstance(e, mw.Vector) else mw.Vector(e),
 }
