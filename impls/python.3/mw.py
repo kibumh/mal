@@ -3,6 +3,10 @@ import itertools
 from typing import Any, Callable, List, Optional, TypeAlias
 
 
+class RuntimeError(Exception):
+    pass
+
+
 class Comment:
     pass
 
@@ -24,13 +28,15 @@ class Keyword:
     keyword: str
 
 
-@dataclasses.dataclass(frozen=True)
+# TODO: As is_macro is set after creation, we can't set frozen.
+@dataclasses.dataclass
 class Fn:
     body: Any  # TODO: Expr
     params: List[Symbol]
     env: Any  # TODO: Env
     fn: Callable
     eval_fn: Callable  # Hack to pass eval function to core module
+    is_macro: bool = False
 
 
 @dataclasses.dataclass

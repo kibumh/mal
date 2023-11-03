@@ -49,21 +49,21 @@ def _count(e: mw.Expr) -> int:
 
 def _slurp(e: mw.Expr) -> str:
     if not isinstance(e, str):
-        raise RuntimeError("path is not string, %s", e)
+        raise mw.RuntimeError("path is not string, %s", e)
     with open(e, "r") as fp:
         return fp.read()
 
 
 def _reset(e1: mw.Expr, e2: mw.Expr) -> mw.Expr:
     if not isinstance(e1, mw.Atom):
-        raise RuntimeError("first element is not atom")
+        raise mw.RuntimeError("first element is not atom")
     e1.v = e2
     return e2
 
 
 def _swap(e: mw.Expr, f: mw.Expr, *es) -> mw.Expr:
     if not isinstance(e, mw.Atom):
-        raise RuntimeError("first element is not atom")
+        raise mw.RuntimeError("first element is not atom")
     # TODO(kibum): Use apply?
     if isinstance(f, Callable):
         e.v = f(e.v, *es)
@@ -71,8 +71,45 @@ def _swap(e: mw.Expr, f: mw.Expr, *es) -> mw.Expr:
         print(f, es)
         e.v = f.eval_fn(f.body, mw.Env(f.env, f.params, [e.v] + list(es)))
     else:
-        raise RuntimeError("second element is not function")
+        raise mw.RuntimeError("second element is not function")
     return e.v
+
+
+def _nth(l: mw.Expr, n: mw.Expr) -> mw.Expr:
+    if isinstance(l, mw.Vector):
+        l = l.vector
+    if not isinstance(l, list):
+        raise mw.RuntimeError("nth: argument is not a list")
+    if not isinstance(n, int):
+        raise mw.RuntimeError("nth: index is not integer")
+    try:
+        return l[n]
+    except IndexError as e:
+        raise mw.RuntimeError("nth: index out of range") from e
+
+
+def _first(l: mw.Expr) -> mw.Expr:
+    if isinstance(l, mw.Nil):
+        return mw.nil
+    if isinstance(l, mw.Vector):
+        l = l.vector
+    if not isinstance(l, list):
+        raise mw.RuntimeError("first: argument is not a list")
+    if not l:
+        return mw.nil
+    return l[0]
+
+
+def _rest(l: mw.Expr) -> mw.Expr:
+    if isinstance(l, mw.Nil):
+        return []
+    if isinstance(l, mw.Vector):
+        l = l.vector
+    if not isinstance(l, list):
+        raise mw.RuntimeError("first: argument is not a list")
+    if not l:
+        return []
+    return l[1:]
 
 
 ns = {
@@ -107,4 +144,7 @@ ns = {
         operator.add, [e.vector if isinstance(e, mw.Vector) else e for e in es], []
     ),
     mw.Symbol("vec"): lambda e: e if isinstance(e, mw.Vector) else mw.Vector(e),
+    mw.Symbol("nth"): _nth,
+    mw.Symbol("first"): _first,
+    mw.Symbol("rest"): _rest,
 }

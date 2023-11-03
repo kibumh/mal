@@ -44,7 +44,7 @@ def pr_str(e: mw.Expr, readably: Optional[bool] = True) -> str:
     if isinstance(e, Callable):
         return "#<function>"
     if isinstance(e, mw.Fn):
-        return "#<tcofunction>"
+        return "#<macro>" if e.is_macro else "#<tcofunction>"
     if isinstance(e, mw.Comment):
         return ""
     raise ValueError("Unexpected expression, " + e)
