@@ -26,21 +26,23 @@ def pr_str(e: mw.Expr, readably: Optional[bool] = True) -> str:
     if isinstance(e, mw.Symbol):
         return e.sym
     if isinstance(e, mw.Keyword):
-        return ":" + e.keyword
+        return ":" + e.k
     if isinstance(e, str):
         return _print_string(e, readably)
-    if isinstance(e, list):
+    if isinstance(e, mw.List):
         return "(" + " ".join(pr_str(c, readably) for c in e) + ")"
     if isinstance(e, mw.Vector):
-        return "[" + " ".join(pr_str(c, readably) for c in e.vector) + "]"
+        return "[" + " ".join(pr_str(c, readably) for c in e) + "]"
     if isinstance(e, mw.Map):
         return (
             "{"
-            + " ".join(pr_str(k, readably) + " " + pr_str(v, readably) for k, v, in e.m)
+            + " ".join(
+                pr_str(k, readably) + " " + pr_str(v, readably) for k, v in e.items()
+            )
             + "}"
         )
     if isinstance(e, mw.Atom):
-        return "(atom " + pr_str(e.v, readably) + ")"
+        return "(atom " + pr_str(e.a, readably) + ")"
     if isinstance(e, Callable):
         return "#<function>"
     if isinstance(e, mw.Fn):

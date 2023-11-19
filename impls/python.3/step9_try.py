@@ -93,6 +93,14 @@ def EVAL(e: mw.Expr, env: mw.Env) -> mw.Expr:
                 fn = EVAL(e[2], env)
                 fn.is_macro = True
                 return env.set(e[1], fn)
+            case mw.Symbol("try*"):
+                try:
+                    return EVAL(e[1], env)
+                except mw.MWError as exc:
+                    if len(e) == 2:
+                        raise
+                    _, exc_sym, exc_body = e[2]
+                    return EVAL(exc_body, mw.Env(env, [exc_sym], exc.args))
             case mw.Symbol("let*"):
                 new_env = mw.Env(env)
                 binds = e[1]
@@ -170,7 +178,7 @@ def main() -> None:
         except reader.SyntaxError as e:
             print(e)
         except mw.MWError as e:
-            print(e)
+            print("Exception:", e)
 
 
 if __name__ == "__main__":

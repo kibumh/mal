@@ -80,11 +80,11 @@ def read_macro(r: Reader) -> mw.Expr:
     m = r.next()
     if m not in _MACROS:
         raise Syntax("Unexpected reader macro")
-    return [_MACROS[m], read_form(r, True)]
+    return mw.List([_MACROS[m], read_form(r, True)])
 
 
 def read_map(r: Reader) -> mw.Map:
-    m = []
+    m = {}
     while True:
         k = read_form(r, True)
         if k is None:
@@ -94,7 +94,7 @@ def read_map(r: Reader) -> mw.Map:
         v = read_form(r, True)
         if v is None:
             raise SyntaxError("unbalanced braces")
-        m.append((k, v))
+        m[k] = v
 
 
 def read_vector(r: Reader) -> mw.Vector:
@@ -115,7 +115,7 @@ def read_list(r: Reader) -> mw.Expr:  # List[Expr]?
         if expr is None:
             raise SyntaxError("unbalanced parenthesis")
         if expr == mw.Symbol(")"):
-            return l
+            return mw.List(l)
         l.append(expr)
 
 

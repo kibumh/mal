@@ -9,11 +9,11 @@ def eval_ast(e: mw.Expr, env) -> mw.Expr:
     if isinstance(e, mw.Symbol):
         return env.get(e)
     if isinstance(e, mw.Vector):
-        return mw.Vector([EVAL(child, env) for child in e.vector])
+        return mw.Vector([EVAL(child, env) for child in e])
     if isinstance(e, mw.Map):
-        return mw.Map([(k, EVAL(v, env)) for k, v in e.m])
-    if isinstance(e, list):
-        return [EVAL(child, env) for child in e]
+        return mw.Map({k: EVAL(v, env) for k, v in e.items()})
+    if isinstance(e, mw.List):
+        return mw.List([EVAL(child, env) for child in e])
     return e
 
 
@@ -22,7 +22,7 @@ def READ(s: str) -> str:
 
 
 def EVAL(e: mw.Expr, env) -> mw.Expr:
-    if not isinstance(e, list):
+    if not isinstance(e, mw.List):
         return eval_ast(e, env)
     if len(e) == 0:
         return e
@@ -32,8 +32,6 @@ def EVAL(e: mw.Expr, env) -> mw.Expr:
         case mw.Symbol("let*"):
             new_env = mw.Env(env)
             binds = e[1]
-            if isinstance(binds, mw.Vector):
-                binds = binds.vector
             for k, v in zip(binds[::2], binds[1::2]):
                 new_env.set(k, EVAL(v, new_env))  # env or new_env?
             return EVAL(e[2], new_env)
@@ -62,7 +60,7 @@ def main() -> None:
             print(rep(input(), env))
         except reader.SyntaxError as e:
             print(e)
-        except mw.EnvError as e:
+        except mw.MWError as e:
             print(e)
 
 
