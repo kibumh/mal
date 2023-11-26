@@ -132,7 +132,6 @@ def _hash_map(*es) -> mw.Map:
     m = dict()
     for k, v in zip(es[::2], es[1::2]):
         m[k] = v
-    print(m)
     return mw.Map(m)
 
 
@@ -150,6 +149,18 @@ def _dissoc(mwm: mw.Map, *es) -> mw.Map:
     for k in es:
         m.pop(k, None)
     return mw.Map(m)
+
+
+def _readline(prompt: str) -> mw.Expr:
+    try:
+        print(_str(prompt), end="")
+        return input()
+    except EOFError:
+        return mw.nil
+
+
+def _not_implemented(*es):
+    raise mw.MWError("not implemented")
 
 
 ns = {
@@ -176,8 +187,8 @@ ns = {
     mw.Symbol("keyword?"): lambda e: isinstance(e, mw.Keyword),
     mw.Symbol("list"): lambda *es: mw.List(list(es)),
     mw.Symbol("list?"): lambda e: isinstance(e, mw.List),
-    mw.Symbol("vec"): lambda e: e if isinstance(e, mw.Vector) else mw.Vector(e),
-    mw.Symbol("vector"): lambda *es: mw.Vector(es),
+    mw.Symbol("vec"): lambda e: e if isinstance(e, mw.Vector) else mw.Vector(e.l),
+    mw.Symbol("vector"): lambda *es: mw.Vector(list(es)),
     mw.Symbol("vector?"): lambda e: isinstance(e, mw.Vector),
     mw.Symbol("empty?"): lambda e: len(e) == 0,
     mw.Symbol("count"): _count,
@@ -214,4 +225,13 @@ ns = {
     mw.Symbol("rest"): _rest,
     mw.Symbol("apply"): _apply,
     mw.Symbol("map"): _map,
+    mw.Symbol("readline"): _readline,
+    mw.Symbol("time-ms"): _not_implemented,
+    mw.Symbol("meta"): _not_implemented,
+    mw.Symbol("with-meta"): _not_implemented,
+    mw.Symbol("fn?"): _not_implemented,
+    mw.Symbol("string?"): _not_implemented,
+    mw.Symbol("number?"): _not_implemented,
+    mw.Symbol("seq"): _not_implemented,
+    mw.Symbol("conj"): _not_implemented,
 }

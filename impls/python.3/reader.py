@@ -131,7 +131,7 @@ def _read_string(t: Token) -> mw.Expr:
     for c in t[1:-1]:
         if escaped:
             if c not in _ESCAPES:
-                raise "unsupported escape"
+                raise SyntaxError("unsupported escape")
             parsed += _ESCAPES[c]
             escaped = False
             continue
